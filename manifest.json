@@ -1,0 +1,22 @@
+{
+  "name": "فلوسي | FLOUSY",
+  "short_name": "فلوسي",
+  "description": "تطبيق إدارة الميزانية والمصاريف الشخصية: دخل، مصروفات، تحويلات، ميزانيات، أهداف ادخار، فواتير وإحصائيات — يعمل بدون إنترنت.",
+  "id": "flosy-personal-finance",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "dir": "rtl",
+  "lang": "ar",
+  "background_color": "#0E0F1A",
+  "theme_color": "#4C46C7",
+  "categories": ["finance", "productivity", "lifestyle"],
+  "icons": [
+    { "src": "assets/icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "maskable" }
+  ]
+}

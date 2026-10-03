@@ -1,0 +1,11 @@
+{
+  "name": "flosy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "فلوسي | FLOUSY — تطبيق إدارة الميزانية والمصاريف الشخصية (PWA محلي يعمل بدون إنترنت)",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/run.js"
+  }
+}

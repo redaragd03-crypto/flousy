@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#4C46C7">
+  <meta name="description" content="فلوسي | FLOUSY — تطبيق إدارة الميزانية والمصاريف الشخصية: دخل، مصروفات، تحويلات، ميزانيات، أهداف ادخار، فواتير وإحصائيات. يعمل بدون إنترنت.">
+  <title>فلوسي | FLOUSY — إدارة ميزانيتك</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/icons/favicon-48x48.png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Sidebar (desktop) -->
+    <aside class="sidebar" id="sidebar" aria-label="القائمة الرئيسية">
+      <div class="brand">
+        <img src="assets/icons/icon-128.png" alt="" class="brand-logo" width="40" height="40">
+        <div class="brand-text">
+          <div class="brand-name">فلوسي</div>
+          <div class="brand-sub">FLOUSY</div>
+        </div>
+      </div>
+      <nav class="side-nav" id="sideNav" aria-label="التنقل الرئيسي"></nav>
+      <div class="side-foot">
+        <button class="side-profile" id="sideProfile" aria-label="الملف الشخصي">
+          <span class="avatar" id="sideAvatar" aria-hidden="true">👤</span>
+          <span class="side-profile-name" id="sideName">رضا</span>
+          <span data-ic="chevD" class="side-chev" aria-hidden="true"></span>
+        </button>
+        <div class="side-acts">
+          <button class="side-act" id="lockBtn" data-tip="قفل التطبيق" aria-label="قفل التطبيق" data-ic="lock"></button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <!-- Topbar -->
+      <header class="topbar" id="topbar">
+        <div class="topbar-title" id="pageTitle" aria-live="polite">الرئيسية</div>
+        <div class="topbar-actions">
+          <label class="searchbox" id="globalSearchBox">
+            <span class="sb-ico" data-ic="search" aria-hidden="true"></span>
+            <input id="globalSearch" type="search" placeholder="ابحث: مطعم، راتب، Uber..." aria-label="بحث في العمليات" autocomplete="off">
+          </label>
+          <button class="icon-btn theme-toggle" id="themeBtn" aria-label="تبديل الوضع الليلي" data-ic="moon"></button>
+          <button class="icon-btn bell-btn" id="bellBtn" aria-label="الإشعارات">
+            <span data-ic="bell" aria-hidden="true"></span>
+            <span class="bell-badge hidden" id="bellBadge" aria-hidden="true">0</span>
+          </button>
+          <button class="add-btn desktop-add" id="desktopAdd">
+            <span data-ic="plus" aria-hidden="true"></span>
+            <span>إضافة</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- View -->
+      <main id="view" class="view" tabindex="-1"></main>
+    </div>
+
+    <!-- Bottom nav (mobile) -->
+    <nav class="bottom-nav" id="bottomNav" aria-label="التنقل السفلي"></nav>
+    <button class="fab" id="fab" aria-label="إضافة عملية جديدة">
+      <span data-ic="plus" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <!-- Notifications panel -->
+  <div id="notifPanel" class="notif-panel hidden" role="dialog" aria-label="الإشعارات"></div>
+
+  <!-- Modals root -->
+  <div id="modalsRoot" class="modals-root"></div>
+
+  <!-- Toasts -->
+  <div id="toastsRoot" class="toasts-root" aria-live="polite"></div>
+
+  <!-- PIN lock screen -->
+  <div id="pinScreen" class="pin-screen hidden" role="dialog" aria-modal="true" aria-label="قفل التطبيق">
+    <div class="pin-card">
+      <div class="pin-emoji" aria-hidden="true">🔐</div>
+      <h1 class="pin-title">فلوسي مقفول</h1>
+      <p class="pin-sub" id="pinHint">أدخل رمز PIN للفتح</p>
+      <div class="pin-dots" id="pinDots" aria-hidden="true"></div>
+      <p class="pin-err hidden" id="pinErr" role="alert">رمز غير صحيح، حاول مرة أخرى</p>
+      <div class="pin-pad" id="pinPad" role="group" aria-label="لوحة الأرقام"></div>
+      <button class="link-btn" id="pinForget" type="button">نسيت الرمز؟</button>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
