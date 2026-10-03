@@ -64,7 +64,9 @@ jobs:
           CI_STORE_PASS: "flousy-ci-store"
           CI_KEY_ALIAS: flousy-ci
           CI_KEY_PASS: "flousy-ci-key"
-        run: ./gradlew assembleDebug assembleRelease --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug assembleRelease --no-daemon
 
       - name: Verify APKs
         working-directory: android
