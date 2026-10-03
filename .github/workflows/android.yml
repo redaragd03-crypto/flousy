@@ -34,7 +34,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK (manual: setup-android action is broken on legacy 'tools' package)
+      - name: "Setup Android SDK (manual - setup-android action is broken on legacy tools package)"
         run: |
           set -e
           SDK_ROOT="$HOME/android-sdk"
