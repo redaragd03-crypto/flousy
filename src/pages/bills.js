@@ -74,14 +74,14 @@ export function render(ctx, view) {
           h('div', { style: 'display:flex;gap:5px' }, [
             h('button', {
               class: 'btn btn-sm', style: `min-height:28px;padding:2px 10px;font-size:11.5px;${r.active ? 'background:var(--income-soft);color:var(--income)' : 'background:var(--surface-2);color:var(--text-3)'}`,
-              onclick: () => { ctx.putRec({ ...r, active: !r.active }); ctx.refresh(); toast(r.active ? 'أوقفنا التوليد' : 'عاد التوليد التلقائي', { emoji: r.active ? '⏸️' : '▶️' }); }
+              onclick: async () => { await ctx.putRec({ ...r, active: !r.active }); ctx.refresh(); toast(r.active ? 'أوقفنا التوليد' : 'عاد التوليد التلقائي', { emoji: r.active ? '⏸️' : '▶️' }); }
             }, r.active ? 'مفعّل' : 'موقوف'),
             h('button', { class: 'icon-btn', style: 'width:32px;height:32px', 'aria-label': 'تعديل', onclick: () => recurringModal(ctx, { initial: r }) }, h('span', { 'data-ic': 'edit' })),
             h('button', {
               class: 'icon-btn', style: 'width:32px;height:32px;color:var(--danger)', 'aria-label': 'حذف',
               onclick: async () => {
                 const ok = await confirmDialog({ title: 'حذف المتكرر', message: `تحذف «${r.name}»؟`, confirmLabel: 'حذف', danger: true, emoji: '🗑️' });
-                if (ok) { ctx.delRec(r.id); ctx.refresh(); toast('تم الحذف', { emoji: '🗑️' }); }
+                if (ok) { await ctx.delRec(r.id); ctx.refresh(); toast('تم الحذف', { emoji: '🗑️' }); }
               }
             }, h('span', { 'data-ic': 'trash' }))
           ])
@@ -123,8 +123,8 @@ function billCard(ctx, b, dueISO, diff, cur, today) {
   if (b.paid) {
     actions.appendChild(h('button', {
       class: 'btn btn-ghost btn-sm',
-      onclick: () => {
-        ctx.putBill({ ...b, paid: false, paidDate: null });
+      onclick: async () => {
+        await ctx.putBill({ ...b, paid: false, paidDate: null });
         ctx.refresh();
         toast('رجّعناها لمستحقة (العملية نفسها لسه موجودة)', { emoji: '↩️', type: 'info' });
       }
@@ -164,7 +164,7 @@ function payBill(ctx, b) {
     ]),
     foot: () => [h('button', {
       class: 'btn btn-primary btn-block',
-      onclick: () => {
+      onclick: async () => {
         const accountId = acctSel.value || accts[0]?.id;
         if (!accountId) { toast('اختار حساب', { type: 'err', emoji: '⚠️' }); return; }
         if (ctx.balanceOf(accountId) < b.amount) {
@@ -172,7 +172,7 @@ function payBill(ctx, b) {
           return;
         }
         const ts = Date.now();
-        ctx.putTx({
+        await ctx.putTx({
           id: (crypto.randomUUID ? crypto.randomUUID() : `id-${ts}`),
           type: 'expense', amount: b.amount,
           categoryId: b.categoryId || 'cat-bills',
@@ -181,8 +181,8 @@ function payBill(ctx, b) {
           notes: '', paymentMethod: 'card', recurringId: null,
           createdAt: ts, updatedAt: ts
         });
-        ctx.putBill({ ...b, paid: true, paidDate: todayISO() });
-        ctx.setSettings({ lastAccount: accountId });
+        await ctx.putBill({ ...b, paid: true, paidDate: todayISO() });
+        await ctx.setSettings({ lastAccount: accountId });
         api.close();
         ctx.refresh();
         toast(`اتدفع ${b.name} بنجاح`, { emoji: '✅' });

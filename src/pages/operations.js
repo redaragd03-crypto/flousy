@@ -237,7 +237,7 @@ export function txDetail(ctx, t) {
     foot: () => [
       h('button', { class: 'btn btn-ghost', style: 'flex:none;padding-inline:16px', onclick: async () => {
         const ok = await confirmDialog({ title: 'حذف العملية', message: 'متأكد إنك هتحذف العملية دي؟', confirmLabel: 'حذف', danger: true, emoji: '🗑️' });
-        if (ok) { ctx.delTx(t.id); api.close(); ctx.refresh(); toast('تم حذف العملية', { emoji: '🗑️' }); }
+        if (ok) { await ctx.delTx(t.id); api.close(); ctx.refresh(); toast('تم حذف العملية', { emoji: '🗑️' }); }
       } }, 'حذف'),
       h('button', {
         class: 'btn btn-primary',

@@ -314,9 +314,10 @@ async function profileModal(ctx) {
     foot: () => [h('button', {
       class: 'btn btn-primary btn-block',
       onclick: async () => {
-        const name = nameInp.value.trim().slice(0, 30) || 'صديقي';
+        const name = nameInp.value.trim().slice(0, 30);
         await ctx.setSettings({ userName: name, userEmoji: emoInp.value.trim() || '🧑' });
         api.close();
+        if (!name && ctx.showOnboarding) { ctx.showOnboarding(); return; }
         ctx.refresh();
         toast(`أهلًا ${name}`, { emoji: '👋' });
       }

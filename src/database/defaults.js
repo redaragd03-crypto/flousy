@@ -1,7 +1,7 @@
 /* defaults.js — default settings, categories, accounts for first run */
 
 export const DEFAULT_SETTINGS = {
-  userName: 'رضا',
+  userName: '',
   userEmoji: '🧑',
   currency: 'EGP',
   theme: 'auto',

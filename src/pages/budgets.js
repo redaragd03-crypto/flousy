@@ -117,7 +117,7 @@ export function render(ctx, view) {
         h('button', { class: 'btn btn-ghost btn-sm', onclick: () => budgetModal(ctx, { categoryId: b.categoryId, initial: b }) }, 'تعديل'),
         h('button', {
           class: 'btn btn-ghost btn-sm', style: 'color:var(--danger)',
-          onclick: () => { ctx.delBudget(b.id); ctx.refresh(); }
+          onclick: async () => { await ctx.delBudget(b.id); ctx.refresh(); }
         }, 'حذف')
       ])
     ]);

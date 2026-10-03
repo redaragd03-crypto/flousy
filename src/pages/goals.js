@@ -75,7 +75,7 @@ export function render(ctx, view) {
           class: 'btn btn-ghost btn-sm', style: 'color:var(--danger)',
           onclick: async () => {
             const ok = await confirmDialog({ title: 'حذف الهدف', message: `تحذف هدف «${g.name}»؟`, confirmLabel: 'حذف', danger: true, emoji: '🗑️' });
-            if (ok) { ctx.delGoal(g.id); ctx.refresh(); toast('تم حذف الهدف', { emoji: '🗑️' }); }
+            if (ok) { await ctx.delGoal(g.id); ctx.refresh(); toast('تم حذف الهدف', { emoji: '🗑️' }); }
           }
         }, 'حذف')
       ])

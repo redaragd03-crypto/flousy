@@ -25,7 +25,7 @@ export function render(ctx, view) {
   /* ---------- greeting ---------- */
   view.appendChild(h('div', { class: 'page-head' }, [
     h('div', {}, [
-      h('h2', { style: 'font-size:21px' }, `أهلاً يا ${s.settings.userName || 'يا صديقي'} 👋`),
+      h('h2', { style: 'font-size:21px' }, s.settings.userName ? `أهلاً يا ${s.settings.userName} 👋` : 'أهلاً 👋'),
       h('div', { class: 'sub' }, 'خلينا نراجع فلوسك النهارده')
     ])
   ]));

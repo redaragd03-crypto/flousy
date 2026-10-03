@@ -30,8 +30,8 @@ export function openModal({ title, icon, body, foot, wide = false, onOpen }) {
   if (foot) panel.appendChild(h('div', { class: 'modal-foot' }, typeof foot === 'function' ? foot() : foot));
 
   const wrap = h('div', { class: 'modal-wrap' });
-  wrap.appendChild(panel);
   wrap.appendChild(backdrop);
+  wrap.appendChild(panel);
   root.appendChild(wrap);
 
   backdrop.addEventListener('click', close);

@@ -163,9 +163,9 @@ export class App {
     this.state = {
       transactions: [], accounts: defaultAccounts(), categories: defaultCategories(),
       budgets: [], goals: [], bills: [], recurring: [],
-      settings: {
-        ...DEFAULT_SETTINGS,
-        userName: keep.userName || 'رضا',
+        settings: {
+          ...DEFAULT_SETTINGS,
+          userName: keep.userName || '',
         userEmoji: keep.userEmoji || '🧑',
         theme: keep.theme || 'auto',
         currency: keep.currency || 'EGP',

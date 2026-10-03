@@ -195,7 +195,7 @@ export function addTxModal(ctx, { type, initial = null } = {}) {
       details
     ]),
     foot: () => {
-      const save = () => {
+      const save = async () => {
         const amount = amt.get();
         if (amount == null) {
           amt.wrap.classList.add('invalid');
@@ -217,8 +217,8 @@ export function addTxModal(ctx, { type, initial = null } = {}) {
           description: descInp.value.trim(), notes: notesInp.value.trim(),
           paymentMethod: selPay, recurringId: null, createdAt: nowTs, updatedAt: nowTs
         };
-        ctx.putTx(tx);
-        ctx.setSettings({
+        await ctx.putTx(tx);
+        await ctx.setSettings({
           lastAccount: acctSel.value,
           lastPayment: selPay,
           ...(isExp ? { lastCategory: selCat } : { lastIncomeCategory: selCat })
@@ -233,7 +233,7 @@ export function addTxModal(ctx, { type, initial = null } = {}) {
           class: 'btn btn-danger', style: 'flex:none;padding-inline:16px',
           onclick: async () => {
             const ok = await confirmDialog({ title: 'حذف العملية', message: 'متأكد إنك هتحذف العملية دي؟ لا يمكن التراجع.', confirmLabel: 'حذف', danger: true, emoji: '🗑️' });
-            if (ok) { ctx.delTx(initial.id); api.close(); ctx.refresh(); toast('تم حذف العملية', { emoji: '🗑️' }); }
+            if (ok) { await ctx.delTx(initial.id); api.close(); ctx.refresh(); toast('تم حذف العملية', { emoji: '🗑️' }); }
           }
         }, 'حذف'));
       }
@@ -284,7 +284,7 @@ export function transferModal(ctx) {
     foot: () => [
       h('button', {
         class: 'btn btn-primary btn-block',
-        onclick: () => {
+        onclick: async () => {
           const amount = amt.get();
           if (amount == null) {
             amt.wrap.classList.add('invalid');
@@ -300,7 +300,7 @@ export function transferModal(ctx) {
             toast('الرصيد في الحساب الأول مش كافي للتحويل', { type: 'err', emoji: '⚠️' });
             return;
           }
-          ctx.putTx({
+          await ctx.putTx({
             id: uid(), type: 'transfer', amount,
             accountId: from.value, toAccountId: toSel.value,
             date: dateInp.value || todayISO(),
@@ -343,11 +343,11 @@ export function openCategoryModal(ctx, { type = 'expense', onPick = null } = {})
     },
     foot: () => [h('button', {
       class: 'btn btn-primary btn-block',
-      onclick: () => {
+      onclick: async () => {
         const name = nameInp.value.trim().slice(0, 30);
         if (!name) { toast('اكتب اسم للقالب', { type: 'err', emoji: '⚠️' }); nameInp.focus(); return; }
         const c = { id: uid(), name, emoji: emo.get(), type, color: col.get(), builtIn: false };
-        ctx.putCategory(c);
+        await ctx.putCategory(c);
         api.close();
         ctx.refresh();
         toast('تم إضافة القالب', { emoji: '🏷️' });
@@ -391,7 +391,7 @@ export function accountModal(ctx, { initial = null } = {}) {
       ...(initial ? [] : [field('رصيد افتتاحي (اختياري)', openAmt.box, 'لو احتاج تبدأ برصيد معين')])
     ]),
     foot: () => {
-      const save = () => {
+      const save = async () => {
         const name = nameInp.value.trim().slice(0, 40);
         if (!name) { toast('اكتب اسم للحساب', { type: 'err', emoji: '⚠️' }); nameInp.focus(); return; }
         if (ctx.state.accounts.some((a) => a.id !== (initial && initial.id) && a.name.trim().toLowerCase() === name.toLowerCase())) {
@@ -409,7 +409,7 @@ export function accountModal(ctx, { initial = null } = {}) {
           active: true,
           createdAt: initial ? initial.createdAt : Date.now()
         };
-        ctx.putAccount(a);
+        await ctx.putAccount(a);
         api.close();
         ctx.refresh();
         toast(initial ? 'تم تعديل الحساب' : 'تم إضافة الحساب', { emoji: '🏦' });
@@ -424,7 +424,7 @@ export function accountModal(ctx, { initial = null } = {}) {
               message: `حذف «${initial.name}»؟ العمليات المرتبطة به هتتحفظ بس الحساب نفسه هيحذف.`,
               confirmLabel: 'حذف', danger: true, emoji: '🗑️'
             });
-            if (ok) { ctx.delAccount(initial.id); api.close(); ctx.refresh(); toast('تم حذف الحساب', { emoji: '🗑️' }); }
+              if (ok) { await ctx.delAccount(initial.id); api.close(); ctx.refresh(); toast('تم حذف الحساب', { emoji: '🗑️' }); }
           }
         }, 'حذف'));
       }
@@ -455,7 +455,7 @@ export function goalModal(ctx, { initial = null } = {}) {
       field('الموعد المستهدف (اختياري)', deadlineInp)
     ]),
     foot: () => {
-      const save = () => {
+      const save = async () => {
         const name = nameInp.value.trim().slice(0, 40);
         const t = target.get();
         const c = current.get() || 0;
@@ -470,7 +470,7 @@ export function goalModal(ctx, { initial = null } = {}) {
           color: initial ? initial.color : '#5B54D9',
           createdAt: initial ? initial.createdAt : Date.now()
         };
-        ctx.putGoal(g);
+        await ctx.putGoal(g);
         api.close();
         ctx.refresh();
         toast(initial ? 'تم تعديل الهدف' : 'اتعمل الهدف — بالتوفيق', { emoji: '🎯' });
@@ -481,7 +481,7 @@ export function goalModal(ctx, { initial = null } = {}) {
           class: 'btn btn-danger', style: 'flex:none;padding-inline:16px',
           onclick: async () => {
             const ok = await confirmDialog({ title: 'حذف الهدف', message: `تحذف هدف «${initial.name}»؟`, confirmLabel: 'حذف', danger: true, emoji: '🗑️' });
-            if (ok) { ctx.delGoal(initial.id); api.close(); ctx.refresh(); toast('تم حذف الهدف', { emoji: '🗑️' }); }
+              if (ok) { await ctx.delGoal(initial.id); api.close(); ctx.refresh(); toast('تم حذف الهدف', { emoji: '🗑️' }); }
           }
         }, 'حذف'));
       }
@@ -500,11 +500,11 @@ export function goalAddAmount(ctx, goal) {
     body: () => h('div', {}, [amt.box]),
     foot: () => [h('button', {
       class: 'btn btn-primary btn-block',
-      onclick: () => {
+      onclick: async () => {
         const v = amt.get();
         if (v == null) { toast('اكتب مبلغ صحيح', { type: 'err', emoji: '⚠️' }); return; }
         const g = { ...goal, currentAmount: Math.min(goal.targetAmount, (Number(goal.currentAmount) || 0) + v) };
-        ctx.putGoal(g);
+        await ctx.putGoal(g);
         api.close();
         ctx.refresh();
         toast(g.currentAmount >= goal.targetAmount ? 'مبروك، كملت الهدف' : `اتضاف ${fmtMoney(v, ctx.currency())}`, { emoji: g.currentAmount >= goal.targetAmount ? '🏆' : '💪' });
@@ -533,7 +533,7 @@ export function budgetModal(ctx, { categoryId = null, initial = null } = {}) {
         : `سقف إنفاقك الشهري على «${cat.name}». عند 90% بيطلع تنبيه، وعند التجاوز بيوضح المبلغ المتجاوز.`)
     ]),
     foot: () => {
-      const save = () => {
+      const save = async () => {
         const amount = amt.get();
         if (amount == null) { toast('اكتب مبلغ الميزانية', { type: 'err', emoji: '⚠️' }); return; }
         const b = {
@@ -541,7 +541,7 @@ export function budgetModal(ctx, { categoryId = null, initial = null } = {}) {
           categoryId, label: isTotal ? 'الميزانية الشهرية' : cat.name,
           amount, createdAt: Date.now()
         };
-        ctx.putBudget(b);
+        await ctx.putBudget(b);
         api.close();
         ctx.refresh();
         toast('تم حفظ الميزانية', { emoji: '🧮' });
@@ -552,7 +552,7 @@ export function budgetModal(ctx, { categoryId = null, initial = null } = {}) {
           class: 'btn btn-danger', style: 'flex:none;padding-inline:16px',
           onclick: async () => {
             const ok = await confirmDialog({ title: 'حذف الميزانية', message: 'تحذف ميزانية البند ده؟', confirmLabel: 'حذف', danger: true, emoji: '🗑️' });
-            if (ok) { ctx.delBudget(initial.id); api.close(); ctx.refresh(); toast('تم حذف الميزانية', { emoji: '🗑️' }); }
+              if (ok) { await ctx.delBudget(initial.id); api.close(); ctx.refresh(); toast('تم حذف الميزانية', { emoji: '🗑️' }); }
           }
         }, 'حذف'));
       }
@@ -590,7 +590,7 @@ export function billModal(ctx, { initial = null } = {}) {
       field('الفئة', catSel)
     ]),
     foot: () => {
-      const save = () => {
+      const save = async () => {
         const name = nameInp.value.trim().slice(0, 40);
         const amount = amt.get();
         if (!name) { toast('اكتب اسم التزام', { type: 'err', emoji: '⚠️' }); return; }
@@ -606,7 +606,7 @@ export function billModal(ctx, { initial = null } = {}) {
           recurring: false,
           createdAt: initial ? initial.createdAt : Date.now()
         };
-        ctx.putBill(b);
+        await ctx.putBill(b);
         api.close();
         ctx.refresh();
         toast(initial ? 'تم تعديل التزام' : 'اتضاف التزام', { emoji: '🧾' });
@@ -617,7 +617,7 @@ export function billModal(ctx, { initial = null } = {}) {
           class: 'btn btn-danger', style: 'flex:none;padding-inline:16px',
           onclick: async () => {
             const ok = await confirmDialog({ title: 'حذف التزام', message: `تحذف «${initial.name}»؟`, confirmLabel: 'حذف', danger: true, emoji: '🗑️' });
-            if (ok) { ctx.delBill(initial.id); api.close(); ctx.refresh(); toast('تم الحذف', { emoji: '🗑️' }); }
+              if (ok) { await ctx.delBill(initial.id); api.close(); ctx.refresh(); toast('تم الحذف', { emoji: '🗑️' }); }
           }
         }, 'حذف'));
       }
@@ -658,7 +658,7 @@ export function recurringModal(ctx, { initial = null } = {}) {
       h('div', { class: 'hint', style: 'margin-top:8px' }, 'التطبيق هيولّد العملية تلقائيًا في كل تاريخ استحقاق (تقدر توقف/تحذف أي وقت).')
     ]),
     foot: () => {
-      const save = () => {
+      const save = async () => {
         const name = nameInp.value.trim().slice(0, 40);
         const amount = amt.get();
         if (!name) { toast('اكتب اسم للمصروف المتكرر', { type: 'err', emoji: '⚠️' }); return; }
@@ -673,7 +673,7 @@ export function recurringModal(ctx, { initial = null } = {}) {
           active: true,
           createdAt: initial ? initial.createdAt : Date.now()
         };
-        ctx.putRec(r);
+        await ctx.putRec(r);
         api.close();
         ctx.refresh();
         toast(initial ? 'تم التعديل' : 'اتضاف — هيظهر تلقائيًا عند الموعد', { emoji: '🔁' });
@@ -684,7 +684,7 @@ export function recurringModal(ctx, { initial = null } = {}) {
           class: 'btn btn-danger', style: 'flex:none;padding-inline:16px',
           onclick: async () => {
             const ok = await confirmDialog({ title: 'حذف المتكرر', message: `تحذف «${initial.name}»؟ العمليات اللي اتولدت قبلاً هتفضل كما هي.`, confirmLabel: 'حذف', danger: true, emoji: '🗑️' });
-            if (ok) { ctx.delRec(initial.id); api.close(); ctx.refresh(); toast('تم الحذف', { emoji: '🗑️' }); }
+              if (ok) { await ctx.delRec(initial.id); api.close(); ctx.refresh(); toast('تم الحذف', { emoji: '🗑️' }); }
           }
         }, 'حذف'));
       }

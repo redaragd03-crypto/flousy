@@ -1165,6 +1165,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
 }
 .modal-panel {
   position: absolute;
+  z-index: 1;
   inset-inline: 0;
   bottom: 0;
   max-height: 92dvh;
@@ -1591,6 +1592,35 @@ html[dir='rtl'] .notif-panel.open { transform: translateX(0); }
 .pin-key:hover { background: var(--surface-3); }
 .pin-key:active { transform: scale(0.94); }
 .pin-card .link-btn { margin-top: 8px; }
+
+/* ---------- First-run name onboarding ---------- */
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.onboarding.hidden { display: none; }
+.onb-card {
+  width: min(380px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 30px 24px calc(24px + env(safe-area-inset-bottom));
+  text-align: center;
+  animation: viewIn 0.28s ease both;
+}
+.onb-emoji { font-size: 52px; line-height: 1; margin-bottom: 10px; }
+.onb-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+.onb-sub { font-size: 14px; color: var(--text-2); font-weight: 600; line-height: 1.9; }
+.onb-card .field { text-align: start; }
+.onb-err { color: var(--danger); font-size: 12.5px; font-weight: 700; margin-top: 6px; }
+.onb-err.hidden { display: none; }
+.onb-card .btn { margin-top: 14px; }
 
 /* ---------- Misc ---------- */
 .divider { height: 1px; background: var(--border); margin: 14px 0; }

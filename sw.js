@@ -1,6 +1,6 @@
 /* Service Worker — فلووسي FLOUSY
    Offline-first: precache app shell + runtime cache for local assets */
-const VERSION = 'flosy-v3';
+const VERSION = 'flosy-v4';
 const ASSETS = `${VERSION}-assets`;
 
 const SHELL = [
@@ -24,6 +24,7 @@ const SHELL = [
   './src/components/ui.js',
   './src/components/modals.js',
   './src/components/icons.js',
+  './src/components/onboarding.js',
   './src/pages/dashboard.js',
   './src/pages/operations.js',
   './src/pages/accounts.js',

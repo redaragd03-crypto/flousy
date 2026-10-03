@@ -4,6 +4,7 @@ import { $, $$, h, clear, paintIcons, setDocTheme } from './utils/dom.js';
 import { App } from './app.js';
 import { initIcons } from './components/icons.js';
 import { openSheet, toast, confirmDialog } from './components/ui.js';
+import { showOnboarding } from './components/onboarding.js';
 import { monthKeyOf, todayISO, relDayLabel, dayLabel } from './utils/dates.js';
 
 initIcons();
@@ -90,9 +91,17 @@ async function route() {
 
 ctx.nav = (name) => { location.hash = `#/${name}`; };
 
+ctx.setMonth = (key) => {
+  ctx.uiMonth = key;
+  route();
+};
+
+ctx.showOnboarding = () => showOnboarding(ctx);
+
 ctx.refresh = function () {
   refreshShell();
   route();
+  if (!ctx.state.settings.userName) showOnboarding(ctx);
 };
 
 window.addEventListener('hashchange', route);
@@ -160,8 +169,8 @@ function openAddSheet() {
   openSheet([
     { emoji: '💸', label: 'إضافة مصروف', sub: 'سجل مصروف جديد في 5 ثواني', onClick: () => addExpense() },
     { emoji: '💰', label: 'إضافة دخل', sub: 'راتب، عمل حر، أو أي دخل', onClick: () => addIncome() },
-    { emoji: '🔄', label: 'تحويل بين الحسابات', sub: 'من حساب لآخر بدون ما يحسب مصروف', onClick: transfer() },
-    { emoji: '🎯', label: 'هدف ادخار جديد', sub: 'حوط فلوس لحاجة معينة', onClick: goal() }
+    { emoji: '🔄', label: 'تحويل بين الحسابات', sub: 'من حساب لآخر بدون ما يحسب مصروف', onClick: () => transfer() },
+    { emoji: '🎯', label: 'هدف ادخار جديد', sub: 'حوط فلوس لحاجة معينة', onClick: () => goal() }
   ]);
 }
 
@@ -428,6 +437,9 @@ window.__flosy = { ctx };
   window.__flosy.booted = true;
   refreshShell();
   route();
+  if (!ctx.state.settings.userName) {
+    showOnboarding(ctx);
+  }
   if (ctx.state.settings.pinEnabled && ctx.state.settings.pinHash) {
     lockApp();
   }

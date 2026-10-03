@@ -121,7 +121,7 @@ function accountDetail(ctx, acct, st) {
             message: `حذف «${acct.name}»؟ العمليات المرتبطة به هتتحفظ بس الحساب نفسه هيحذف.`,
             confirmLabel: 'حذف', danger: true, emoji: '🗑️'
           });
-          if (ok) { ctx.delAccount(acct.id); api.close(); ctx.refresh(); toast('تم حذف الحساب', { emoji: '🗑️' }); }
+          if (ok) { await ctx.delAccount(acct.id); api.close(); ctx.refresh(); toast('تم حذف الحساب', { emoji: '🗑️' }); }
         }
       }, 'حذف'),
       h('button', { class: 'btn btn-soft', onclick: () => { api.close(); accountModal(ctx, { initial: acct }); } }, 'تعديل')
