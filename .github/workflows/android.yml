@@ -60,10 +60,11 @@ jobs:
       - name: Build APKs (debug + release)
         working-directory: android
         env:
+          # PKCS12 keystores require store password == key password
           CI_RELEASE_KEYSTORE: ${{ github.workspace }}/android/release-ci.keystore
           CI_STORE_PASS: "flousy-ci-store"
           CI_KEY_ALIAS: flousy-ci
-          CI_KEY_PASS: "flousy-ci-key"
+          CI_KEY_PASS: "flousy-ci-store"
         run: |
           unset ANDROID_SDK_ROOT
           chmod +x gradlew
