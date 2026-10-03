@@ -65,6 +65,7 @@ jobs:
           CI_KEY_ALIAS: flousy-ci
           CI_KEY_PASS: "flousy-ci-key"
         run: |
+          unset ANDROID_SDK_ROOT
           chmod +x gradlew
           ./gradlew assembleDebug assembleRelease --no-daemon
 
