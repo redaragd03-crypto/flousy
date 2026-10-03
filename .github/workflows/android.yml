@@ -75,7 +75,7 @@ jobs:
         run: |
           set -e
           ls -la app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release.apk
-          AAPT="$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt"
+          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt"
           echo "=== debug badging ==="
           "$AAPT" dump badging app/build/outputs/apk/debug/app-debug.apk | grep -E "^package:|^application-label:|^application-icon:"
           echo "=== release badging ==="
