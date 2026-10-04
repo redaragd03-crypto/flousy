@@ -1,0 +1,214 @@
+name: GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.1.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          VERSION_NAME="${TAG#v}"
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "Release tag: $TAG"
+          echo "Version name: $VERSION_NAME"
+      
+      - name: Extract versionCode from build.gradle
+        id: versioncode
+        run: |
+          VERSION_CODE=$(grep -oP 'versionCode \K\d+' android/app/build.gradle)
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "Version code: $VERSION_CODE"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build web assets
+        run: npm run build
+      
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      
+      - name: Setup Android SDK
+        run: |
+          set -e
+          SDK_ROOT="$HOME/android-sdk"
+          mkdir -p "$SDK_ROOT/cmdline-tools"
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/clt.zip
+          unzip -q /tmp/clt.zip -d "$SDK_ROOT/cmdline-tools"
+          mv "$SDK_ROOT/cmdline-tools/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
+          yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      
+      - name: Sync Capacitor
+        run: npx cap sync android
+      
+      - name: Prepare release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Missing KEYSTORE_BASE64 secret"
+            exit 1
+          fi
+          for v in KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Missing $v secret"
+              exit 1
+            fi
+          done
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          keytool -list -keystore "$RUNNER_TEMP/release.keystore" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
+          echo "✅ Keystore validated"
+      
+      - name: Build signed release APK
+        working-directory: android
+        env:
+          CI_RELEASE_KEYSTORE: ${{ runner.temp }}/release.keystore
+          CI_STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          CI_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          CI_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          unset ANDROID_SDK_ROOT
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+      
+      - name: Verify APK signature
+        id: verify
+        working-directory: android
+        run: |
+          set -e
+          APK=app/build/outputs/apk/release/app-release.apk
+          
+          if [ ! -f "$APK" ]; then
+            echo "::error::APK not found at $APK"
+            exit 1
+          fi
+          
+          echo "APK size: $(du -h "$APK" | cut -f1)"
+          
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          
+          echo "=== Package info ==="
+          "$BT/aapt" dump badging "$APK" | grep -E "^package:|^application-label:"
+          
+          echo "=== Signature verification ==="
+          "$BT/apksigner" verify --print-certs "$APK"
+          
+          echo "=== Certificate fingerprint ==="
+          "$BT/apksigner" verify --print-certs "$APK" | grep -A2 "Signer #1 certificate SHA-256" | tail -1 | tee "$RUNNER_TEMP/cert-sha256.txt"
+          
+          CERT_SHA256=$(cat "$RUNNER_TEMP/cert-sha256.txt" | tr -d '[:space:]')
+          echo "cert_sha256=$CERT_SHA256" >> $GITHUB_OUTPUT
+          
+          echo "=== APK SHA-256 ==="
+          sha256sum "$APK"
+      
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk FLOUSY-release.apk
+      
+      - name: Generate release notes
+        id: notes
+        run: |
+          cat > release-notes.md <<'EOF'
+          ## فلوسي | FLOUSY v${{ steps.version.outputs.version_name }}
+          
+          ### معلومات الإصدار
+          - **النسخة:** ${{ steps.version.outputs.version_name }}
+          - **رمز النسخة:** ${{ steps.versioncode.outputs.version_code }}
+          - **Package ID:** com.flousy.app
+          - **بصمة الشهادة:** `${{ steps.verify.outputs.cert_sha256 }}`
+          
+          ### التحميل
+          قم بتنزيل ملف `FLOUSY-release.apk` أدناه وتثبيته على جهاز Android الخاص بك.
+          
+          ### ملاحظات
+          - التطبيق موقّع بنفس شهادة Release الرسمية
+          - يعمل بدون إنترنت (Offline-first PWA)
+          - بياناتك محفوظة محليًا على جهازك فقط
+          EOF
+          cat release-notes.md
+      
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: FLOUSY v${{ steps.version.outputs.version_name }}
+          body_path: release-notes.md
+          files: |
+            FLOUSY-release.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Update version.json for GitHub Pages
+        run: |
+          cat > version.json <<EOF
+          {
+            "versionName": "${{ steps.version.outputs.version_name }}",
+            "versionCode": ${{ steps.versioncode.outputs.version_code }},
+            "minimumVersionCode": ${{ steps.versioncode.outputs.version_code }},
+            "downloadUrl": "https://github.com/redaragd03-crypto/flousy/releases/download/${{ steps.version.outputs.tag }}/FLOUSY-release.apk",
+            "releaseUrl": "https://github.com/redaragd03-crypto/flousy/releases/tag/${{ steps.version.outputs.tag }}",
+            "releaseNotes": "تحديث إلى الإصدار ${{ steps.version.outputs.version_name }}"
+          }
+          EOF
+          cat version.json
+      
+      - name: Deploy version.json to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          keep_files: true
+          destination_dir: .
+          commit_message: 'Update version.json for v${{ steps.version.outputs.version_name }}'
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'

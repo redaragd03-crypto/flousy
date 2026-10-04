@@ -16,6 +16,8 @@ import { buildNotifications } from '../src/services/notifications.js';
 import { buildMonthAnalysis } from '../src/services/insights.js';
 import { buildSeedData } from '../src/services/seed.js';
 import { parseBackup, buildBackup, exportCSV } from '../src/services/exporters.js';
+import { tests as updateManagerTests, name as updateManagerName } from './update-manager.test.js';
+import { tests as upgradeTests, name as upgradeName } from './upgrade.test.js';
 
 let passed = 0;
 let failed = 0;
@@ -241,6 +243,16 @@ t('exportCSV escapes quotes', () => {
   assert.ok(csv.startsWith('\uFEFF'));
   assert.ok(csv.includes('"مطعم, ""حلو"""'));
 });
+
+console.log(updateManagerName);
+for (const test of updateManagerTests) {
+  t(test.name, test.fn);
+}
+
+console.log(upgradeName);
+for (const test of upgradeTests) {
+  t(test.name, test.fn);
+}
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

@@ -3,9 +3,10 @@
 import { $, $$, h, clear, paintIcons, setDocTheme } from './utils/dom.js';
 import { App } from './app.js';
 import { initIcons } from './components/icons.js';
-import { openSheet, toast, confirmDialog } from './components/ui.js';
+import { openSheet, toast, confirmDialog, openModal } from './components/ui.js';
 import { showOnboarding } from './components/onboarding.js';
 import { monthKeyOf, todayISO, relDayLabel, dayLabel } from './utils/dates.js';
+import { checkForUpdate, openDownloadUrl } from './services/update-manager.js';
 
 initIcons();
 
@@ -448,6 +449,9 @@ window.__flosy = { ctx };
     lockApp();
   }
 
+  // Background update check (non-blocking)
+  checkForUpdateInBackground();
+
   // service worker
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     window.addEventListener('load', () => {
@@ -455,3 +459,103 @@ window.__flosy = { ctx };
     });
   }
 })();
+
+/* ---------------- background update check ---------------- */
+
+async function checkForUpdateInBackground() {
+  try {
+    // Don't block startup - run in background
+    const result = await checkForUpdate();
+    
+    if (!result.available) {
+      // Offline, invalid, or up-to-date - silent
+      return;
+    }
+    
+    // Update available - show notification
+    showUpdateNotification(result);
+  } catch (err) {
+    // Silent fail on startup update check
+    console.warn('[UpdateCheck] Background check failed:', err);
+  }
+}
+
+function showUpdateNotification(updateInfo) {
+  const mandatory = updateInfo.mandatory;
+  
+  if (mandatory) {
+    // Mandatory update - show immediately as blocking dialog
+    showMandatoryUpdateDialog(updateInfo);
+  } else {
+    // Optional update - show toast notification
+    const message = `إصدار جديد متوفر: v${updateInfo.latestVersionName}`;
+    toast(message, { 
+      emoji: '🎉', 
+      ms: 6000,
+      action: {
+        label: 'تحديث',
+        onClick: () => showOptionalUpdateDialog(updateInfo)
+      }
+    });
+  }
+}
+
+function showMandatoryUpdateDialog(updateInfo) {
+  let message = `إصدار جديد متوفر: v${updateInfo.latestVersionName}\n\n`;
+  message += `الإصدار الحالي: v${updateInfo.currentVersionName}\n\n`;
+  
+  if (updateInfo.releaseNotes) {
+    message += `ما الجديد:\n${updateInfo.releaseNotes}\n\n`;
+  }
+  
+  message += '⚠️ هذا التحديث إجباري ويجب تثبيته للاستمرار في استخدام التطبيق.';
+  
+  const api = openModal({
+    title: 'تحديث إجباري',
+    icon: '⚠️',
+    body: () => h('div', { style: 'white-space:pre-wrap' }, message),
+    foot: () => [h('button', {
+      class: 'btn btn-primary btn-block',
+      onclick: () => {
+        if (updateInfo.downloadUrl) {
+          openDownloadUrl(updateInfo.downloadUrl);
+        }
+      }
+    }, 'تحديث الآن')],
+    closable: false
+  });
+}
+
+function showOptionalUpdateDialog(updateInfo) {
+  let message = `إصدار جديد متوفر: v${updateInfo.latestVersionName}\n\n`;
+  message += `الإصدار الحالي: v${updateInfo.currentVersionName}\n\n`;
+  
+  if (updateInfo.releaseNotes) {
+    message += `ما الجديد:\n${updateInfo.releaseNotes}`;
+  }
+  
+  let api;
+  api = openModal({
+    title: 'تحديث متوفر',
+    icon: '🎉',
+    body: () => h('div', { style: 'white-space:pre-wrap' }, message),
+    foot: () => [h('div', { style: 'display:flex;gap:8px;width:100%' }, [
+      h('button', {
+        class: 'btn btn-ghost',
+        style: 'flex:1',
+        onclick: () => api.close()
+      }, 'لاحقًا'),
+      h('button', {
+        class: 'btn btn-primary',
+        style: 'flex:1',
+        onclick: () => {
+          if (updateInfo.downloadUrl) {
+            openDownloadUrl(updateInfo.downloadUrl);
+            api.close();
+          }
+        }
+      }, 'تحديث الآن')
+    ])],
+    closable: true
+  });
+}

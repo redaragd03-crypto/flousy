@@ -8,6 +8,7 @@ import { exportJSON, parseBackup, downloadFile, buildBackup } from '../services/
 import { buildSeedData } from '../services/seed.js';
 import { DEFAULT_SETTINGS } from '../database/defaults.js';
 import { loadAll, replaceAll, uid } from '../database/db.js';
+import { checkForUpdate, getCurrentVersion, openDownloadUrl } from '../services/update-manager.js';
 
 export function render(ctx, view) {
   clear(view);
@@ -175,6 +176,26 @@ export function render(ctx, view) {
           toast('اتضافت البيانات التجريبية', { emoji: '✨' });
         }
       }, 'إضافة')
+    ])
+  ]));
+
+  /* ---------- updates ---------- */
+  view.appendChild(h('div', { class: 'set-group', style: 'margin-top:14px' }, [
+    h('div', { class: 'set-group-title' }, ['🔄', 'التحديثات']),
+    h('div', { class: 'set-row' }, [
+      h('span', { class: 'set-ico' }, '📱'),
+      h('div', { class: 'set-main' }, [
+        h('div', { class: 'set-label' }, 'الإصدار الحالي'),
+        h('div', { class: 'set-sub' }, `v${getCurrentVersion().versionName} (${getCurrentVersion().versionCode})`)
+      ])
+    ]),
+    h('div', { class: 'set-row' }, [
+      h('span', { class: 'set-ico' }, '🔍'),
+      h('div', { class: 'set-main' }, [
+        h('div', { class: 'set-label' }, 'التحقق من التحديثات'),
+        h('div', { class: 'set-sub' }, 'تحقق من وجود إصدار جديد من التطبيق')
+      ]),
+      h('button', { class: 'btn btn-soft btn-sm', onclick: () => checkUpdateManually(ctx) }, 'تحقق الآن')
     ])
   ]));
 
@@ -428,4 +449,79 @@ async function pinChangeModal(ctx) {
     }, 'تغيير')]
   });
   setTimeout(() => oldInp.focus(), 80);
+}
+
+/* ---------- update check ---------- */
+
+async function checkUpdateManually(ctx) {
+  toast('جاري التحقق من التحديثات...', { emoji: '🔍', ms: 2000 });
+  
+  const result = await checkForUpdate();
+  
+  if (!result.available) {
+    if (result.reason === 'offline') {
+      toast('لا يمكن التحقق من التحديثات — تأكد من اتصالك بالإنترنت', { type: 'err', emoji: '📡', ms: 4000 });
+    } else if (result.reason === 'invalid') {
+      toast('خطأ في قراءة معلومات التحديث', { type: 'err', emoji: '⚠️', ms: 4000 });
+    } else {
+      toast('أنت تستخدم أحدث إصدار', { emoji: '✅', ms: 3000 });
+    }
+    return;
+  }
+  
+  // Update available
+  showUpdateDialog(result);
+}
+
+function showUpdateDialog(updateInfo) {
+  const mandatory = updateInfo.mandatory;
+  const title = mandatory ? 'تحديث إجباري' : 'تحديث متوفر';
+  const icon = mandatory ? '⚠️' : '🎉';
+  
+  let message = `إصدار جديد متوفر: v${updateInfo.latestVersionName} (${updateInfo.latestVersionCode})\n\n`;
+  message += `الإصدار الحالي: v${updateInfo.currentVersionName} (${updateInfo.currentVersionCode})\n\n`;
+  
+  if (updateInfo.releaseNotes) {
+    message += `ما الجديد:\n${updateInfo.releaseNotes}\n\n`;
+  }
+  
+  if (mandatory) {
+    message += '⚠️ هذا التحديث إجباري ويجب تثبيته للاستمرار في استخدام التطبيق.';
+  }
+  
+  const updateNowBtn = h('button', {
+    class: mandatory ? 'btn btn-primary btn-block' : 'btn btn-primary',
+    style: mandatory ? '' : 'flex:1',
+    onclick: () => {
+      if (!updateInfo.downloadUrl) {
+        toast('رابط التحديث غير متوفر', { type: 'err', emoji: '⚠️', ms: 3000 });
+        return;
+      }
+      openDownloadUrl(updateInfo.downloadUrl);
+      api.close();
+      toast('جاري فتح صفحة التنزيل...', { emoji: '📥', ms: 3000 });
+    }
+  }, 'تحديث الآن');
+  
+  const laterBtn = mandatory ? null : h('button', {
+    class: 'btn btn-ghost',
+    style: 'flex:1',
+    onclick: () => {
+      api.close();
+      toast('يمكنك التحديث لاحقًا من الإعدادات', { emoji: 'ℹ️', ms: 3000 });
+    }
+  }, 'لاحقًا');
+  
+  const footerContent = mandatory 
+    ? [updateNowBtn] 
+    : [h('div', { style: 'display:flex;gap:8px;width:100%' }, [laterBtn, updateNowBtn])];
+  
+  let api;
+  api = openModal({
+    title,
+    icon,
+    body: () => h('div', { style: 'white-space:pre-wrap' }, message),
+    foot: () => footerContent,
+    closable: !mandatory
+  });
 }
