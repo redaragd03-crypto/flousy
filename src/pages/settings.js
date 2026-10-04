@@ -203,6 +203,19 @@ export function render(ctx, view) {
     ])
   ]));
 
+  /* ---------- full data wipe ---------- */
+  view.appendChild(h('div', { class: 'set-group', style: 'margin-top:14px' }, [
+    h('div', { class: 'set-group-title' }, ['🗑️', 'البيانات']),
+    h('div', { class: 'set-row' }, [
+      h('span', { class: 'set-ico' }, '🗑️'),
+      h('div', { class: 'set-main' }, [
+        h('div', { class: 'set-label' }, 'مسح جميع البيانات'),
+        h('div', { class: 'set-sub' }, 'يحذف جميع البيانات المحفوظة على هذا الجهاز ولا يمكن التراجع عن العملية.')
+      ]),
+      h('button', { class: 'btn btn-danger btn-sm', onclick: () => fullWipeDialog(ctx) }, 'مسح')
+    ])
+  ]));
+
   /* ---------- about ---------- */
   view.appendChild(h('div', { class: 'set-group', style: 'margin-top:14px' }, [
     h('div', { class: 'set-group-title' }, ['ℹ️', 'حول التطبيق']),
@@ -220,6 +233,29 @@ export function render(ctx, view) {
 }
 
 /* ---------- helpers ---------- */
+
+/** Full local data wipe: confirm -> wipe -> verify -> toast -> safe reload.
+    After reload the app behaves like a fresh install (onboarding shows again). */
+async function fullWipeDialog(ctx) {
+  const ok = await confirmDialog({
+    title: 'مسح جميع البيانات',
+    icon: '⚠️',
+    message: 'سيتم حذف جميع بيانات FLOUSY المحفوظة على هذا الجهاز، بما في ذلك:\n• العمليات والمعاملات\n• الحسابات والأرصدة\n• الفواتير\n• الأهداف\n• التصنيفات\n• الإعدادات\n• بيانات المستخدم المحلية\n\nهذا الإجراء لا يمكن التراجع عنه.',
+    confirmLabel: 'مسح جميع البيانات',
+    cancelLabel: 'إلغاء',
+    danger: true,
+    emoji: '⚠️'
+  });
+  if (!ok) return;
+  try {
+    await ctx.wipeAllData();
+  } catch (err) {
+    toast('حصل خطأ أثناء المسح: ' + (err && err.message || err), { type: 'err', emoji: '⚠️', ms: 6000 });
+    return;
+  }
+  toast('تم حذف جميع البيانات بنجاح.', { emoji: '🗑️', ms: 1500 });
+  setTimeout(() => location.reload(), 700);
+}
 
 function switchEl(on, onChange) {
   const sw = h('button', {

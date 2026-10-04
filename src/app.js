@@ -163,9 +163,9 @@ export class App {
     this.state = {
       transactions: [], accounts: defaultAccounts(), categories: defaultCategories(),
       budgets: [], goals: [], bills: [], recurring: [],
-        settings: {
-          ...DEFAULT_SETTINGS,
-          userName: keep.userName || '',
+      settings: {
+        ...DEFAULT_SETTINGS,
+        userName: keep.userName || '',
         userEmoji: keep.userEmoji || '🧑',
         theme: keep.theme || 'auto',
         currency: keep.currency || 'EGP',
@@ -178,6 +178,26 @@ export class App {
     await db.setSettings(this.state.settings);
     this.uiMonth = monthKeyOf(todayISO(), this.firstDay());
     this.applyTheme();
+  }
+
+  /** Full local wipe: every store + settings + user name. App returns to first-run state.
+      Throws if verification finds leftover data. No network, no caches touched. */
+  async wipeAllData() {
+    await db.clearAll();
+    const check = await db.loadAll();
+    const leftover = Object.entries(check).some(([k, v]) =>
+      Array.isArray(v) ? v.length > 0 : Object.keys(v || {}).length > 0);
+    if (leftover) {
+      const detail = Object.entries(check)
+        .filter(([, v]) => Array.isArray(v) ? v.length > 0 : Object.keys(v || {}).length > 0)
+        .map(([k]) => k).join(', ');
+      throw new Error('wipe verification failed: data still present in ' + detail);
+    }
+    this.state = {
+      transactions: [], accounts: [], categories: [], budgets: [], goals: [], bills: [], recurring: [],
+      settings: { ...DEFAULT_SETTINGS }
+    };
+    this.uiMonth = monthKeyOf(todayISO(), this.firstDay());
   }
 
   /* ---------- notifications ---------- */

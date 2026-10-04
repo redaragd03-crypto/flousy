@@ -143,7 +143,7 @@ export function confirmDialog({ title, message, confirmLabel = 'تأكيد', can
     const api = openModal({
       title,
       icon: emoji,
-      body: () => h('p', { style: 'font-size:14.5px;color:var(--text-2);font-weight:600;line-height:1.9' }, message),
+      body: () => h('p', { style: 'font-size:14.5px;color:var(--text-2);font-weight:600;line-height:1.9;white-space:pre-line' }, message),
       foot: () => [
         h('button', { class: `btn btn-ghost`, onclick: () => { api.close(); resolve(false); } }, cancelLabel),
         h('button', {
