@@ -3,3 +3,8 @@ www/
 .DS_Store
 Thumbs.db
 *.log
+
+# Signing secrets — never commit
+*.jks
+*.keystore
+key.properties

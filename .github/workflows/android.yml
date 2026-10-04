@@ -34,7 +34,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: "Setup Android SDK (manual - setup-android action is broken on legacy tools package)"
+      - name: Setup Android SDK (manual - setup-android action is broken on legacy tools package)
         run: |
           set -e
           SDK_ROOT="$HOME/android-sdk"
@@ -50,49 +50,62 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Generate CI release keystore (CI-only throwaway signing)
+      - name: Prepare stable release keystore from secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          keytool -genkeypair -keystore android/release-ci.keystore \
-            -alias flousy-ci -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "flousy-ci-store" -keypass "flousy-ci-key" \
-            -dname "CN=FLOUSY CI, OU=Dev, O=FLOUSY, L=Cairo, ST=EG, C=EG"
+          set -e
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Missing GitHub secret KEYSTORE_BASE64. Add KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD repo secrets first."
+            exit 1
+          fi
+          for v in KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::Missing GitHub secret $v"; exit 1; fi
+          done
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          # validate WITHOUT printing any secret values
+          keytool -list -keystore "$RUNNER_TEMP/release.keystore" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
+          echo "Keystore decoded and validated OK (alias exists, store password correct)."
 
-      - name: Build APKs (debug + release)
+      - name: Build signed release APK
         working-directory: android
         env:
-          # PKCS12 keystores require store password == key password
-          CI_RELEASE_KEYSTORE: ${{ github.workspace }}/android/release-ci.keystore
-          CI_STORE_PASS: "flousy-ci-store"
-          CI_KEY_ALIAS: flousy-ci
-          CI_KEY_PASS: "flousy-ci-store"
+          CI_RELEASE_KEYSTORE: ${{ runner.temp }}/release.keystore
+          CI_STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          CI_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          CI_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
         run: |
           unset ANDROID_SDK_ROOT
           chmod +x gradlew
-          ./gradlew assembleDebug assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
-      - name: Verify APKs
+      - name: Verify signed release APK
         working-directory: android
         run: |
           set -e
-          ls -la app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release.apk
-          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt"
-          echo "=== debug badging ==="
-          "$AAPT" dump badging app/build/outputs/apk/debug/app-debug.apk | grep -E "^package:|^application-label:|^application-icon:"
-          echo "=== release badging ==="
-          "$AAPT" dump badging app/build/outputs/apk/release/app-release.apk | grep -E "^package:|^application-label:|^application-icon:"
-          echo "=== launcher icons inside APK ==="
-          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -E "mipmap-xxxhdpi|AndroidManifest" | head -20
+          APK=app/build/outputs/apk/release/app-release.apk
+          ls -la "$APK"
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          echo "=== badging ==="
+          "$BT/aapt" dump badging "$APK" | grep -E "^package:|^application-label:|^application-icon:" | head -8
+          echo "=== signature verification (apksigner) ==="
+          "$BT/apksigner" verify --print-certs "$APK"
+          echo "=== SHA-256 of APK file ==="
+          sha256sum "$APK"
 
-      - name: Upload debug APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: flousy-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+      - name: Rename to FLOUSY-release.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk FLOUSY-release.apk
 
-      - name: Upload release APK artifact
+      - name: Remove keystore from runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
+
+      - name: Upload signed release APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: flousy-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: warn
+          path: FLOUSY-release.apk
+          if-no-files-found: error
