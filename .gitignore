@@ -1,0 +1,11 @@
+node_modules/
+www/
+.DS_Store
+Thumbs.db
+*.log
+
+# Signing secrets — never commit
+*.jks
+*.keystore
+*.b64
+key.properties

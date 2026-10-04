@@ -1,0 +1,19 @@
+{
+  "name": "flosy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "فلوسي | FLOUSY — تطبيق إدارة الميزانية والمصاريف الشخصية (PWA محلي يعمل بدون إنترنت)",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/run.js",
+    "build": "node scripts/build-web.js",
+    "cap:sync": "npm run build && npx cap sync android",
+    "android:build": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug assembleRelease"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/cli": "^6.2.2",
+    "@capacitor/core": "^6.2.2"
+  }
+}
