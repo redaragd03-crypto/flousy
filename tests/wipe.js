@@ -123,6 +123,23 @@ try {
     global.__cacheBefore = await evalJs(`(async () => { try { return (await caches.keys()).filter(c => c.startsWith('flosy-')).length; } catch { return -1; } })()`);
   }));
 
+  ok(await step('الوصول الحقيقي: sidebar رابط الإعدادات يفتح الصفحة', async () => {
+    await evalJs(`window.__flosy.ctx.nav('dashboard')`);
+    await sleep(300);
+    const link = await evalJs(`(() => {
+      const a = document.querySelector('#sideNav a[data-route="settings"]');
+      if (!a) return 'missing-link';
+      a.click();
+      return 'clicked';
+    })()`);
+    assert(link === 'clicked', 'settings link in sidebar not found/clickable');
+    await waitUntil(`location.hash.includes('settings')`, { label: 'hash to settings' });
+    await waitUntil(`document.querySelector('#view')?.textContent?.includes('الإعدادات')`, { label: 'settings page rendered' });
+    // back navigation
+    await evalJs(`window.history.back()`);
+    await waitUntil(`document.querySelector('#view')?.textContent?.includes('أهلاً')`, { label: 'back to dashboard', tries: 12 });
+  }));
+
   ok(await step('زر مسح جميع البيانات موجود في الإعدادات', async () => {
     await evalJs(`window.__flosy.ctx.nav('settings')`);
     await waitUntil(`document.querySelector('#view')?.textContent?.includes('مسح جميع البيانات')`, { label: 'wipe row visible' });
@@ -131,13 +148,35 @@ try {
     assert(foot && foot.includes('لا يمكن التراجع'), 'warning sub-text missing');
   }));
 
+  ok(await step('danger zone + الوصول من اللمس (hit-test) والـMore sheet فيه إعدادات', async () => {
+    // danger zone group exists
+    assert(await evalJs(`!!document.querySelector('.set-group.danger-zone')`), 'danger zone group missing');
+    // More sheet still offers settings entry (mobile path)
+    await evalJs(`window.__flosy.ctx.nav('dashboard')`);
+    await sleep(250);
+    await evalJs(`(() => { document.querySelector('.bn-item[data-bn="more"]').click(); return true; })()`);
+    await waitUntil(`!!document.querySelector('.sheet-menu.open')`, { label: 'more sheet' });
+    const hasSettings = await evalJs(`Array.from(document.querySelectorAll('.sheet-menu .sheet-item')).some(b => b.textContent.includes('الإعدادات'))`);
+    assert(hasSettings, 'settings entry missing from More sheet');
+    await evalJs(`(() => { Array.from(document.querySelectorAll('.sheet-menu .sheet-item')).find(b => b.textContent.includes('الإعدادات')).click(); return true; })()`);
+    await waitUntil(`location.hash.includes('settings')`, { label: 'nav via more' });
+    await waitUntil(`!!document.querySelector('#view .set-group.danger-zone')`, { label: 'danger zone visible' });
+    // confirm button hit-testable at mobile viewport
+    const hit = await evalJs(`(() => {
+      const b = document.querySelector('.danger-zone .btn-danger');
+      const r = b.getBoundingClientRect();
+      const el = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+      return b === el || b.contains(el);
+    })()`);
+    assert(hit, 'wipe button not hit-testable (covered or offscreen)');
+  }));
+
   ok(await step('الضغط يظهر Confirmation Dialog بالنص المطلوب', async () => {
     const row = await evalJs(`(() => { const r = Array.from(document.querySelectorAll('#view .set-row')).find(x => x.textContent.includes('مسح جميع البيانات')); r.querySelector('button').click(); return true; })()`);
-    assert(row, 'click failed');
     await waitUntil(`!!document.querySelector('.modal-open .modal-panel')`, { label: 'confirm dialog' });
     const txt = await evalJs(`document.querySelector('.modal-panel').textContent`);
     assert(txt.includes('مسح جميع البيانات'), 'title missing');
-    assert(txt.includes('العمليات والمعاملات') && txt.includes('الحسابات والأرصدة') && txt.includes('الإعدادات'), 'items list missing');
+    assert(txt.includes('العمليات') && txt.includes('الحسابات والأرصدة') && txt.includes('إعدادات المستخدم'), 'items list missing');
     assert(txt.includes('لا يمكن التراجع عنه'), 'irreversibility warning missing');
     // hit-test: confirm button not covered
     const hit = await evalJs(`(() => {

@@ -1535,6 +1535,10 @@ html[dir='rtl'] .notif-panel.open { transform: translateX(0); }
 .set-val { font-size: 13.5px; font-weight: 800; color: var(--primary); white-space: nowrap; }
 .set-row .ic.chev { color: var(--text-3); font-size: 15px; }
 
+/* Danger zone (settings) */
+.set-group.danger-zone { border-color: var(--danger-soft); }
+.set-group.danger-zone .set-group-title.danger-title { color: var(--danger); }
+
 /* ---------- PIN screen ---------- */
 .pin-screen {
   position: fixed;

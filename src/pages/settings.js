@@ -156,17 +156,6 @@ export function render(ctx, view) {
       ]),
       importBtn(ctx)
     ]),
-    st.isSeed ? h('div', { class: 'set-row' }, [
-      h('span', { class: 'set-ico' }, '🧹'),
-      h('div', { class: 'set-main' }, [
-        h('div', { class: 'set-label' }, 'مسح البيانات التجريبية'),
-        h('div', { class: 'set-sub' }, 'البيانات الحالية Seed Data — امسحها ارجع لنقطة البداية')
-      ]),
-      h('button', { class: 'btn btn-danger btn-sm', onclick: async () => {
-        const ok = await confirmDialog({ title: 'مسح البيانات التجريبية', message: 'هيمسح كل البيانات التجريبية ويرجع التطبيق لنقطة البداية (حسابين + الإعدادات).', confirmLabel: 'مسح', danger: true, emoji: '🧹' });
-        if (ok) { await ctx.resetAll(); toast('تم المسح — ابدأ جديد', { emoji: '🧹' }); }
-      } }, 'مسح')
-    ]) : null,
     h('div', { class: 'set-row' }, [
       h('span', { class: 'set-ico' }, '✨'),
       h('div', { class: 'set-main' }, [
@@ -186,26 +175,12 @@ export function render(ctx, view) {
           toast('اتضافت البيانات التجريبية', { emoji: '✨' });
         }
       }, 'إضافة')
-    ]),
-    h('div', { class: 'set-row' }, [
-      h('span', { class: 'set-ico' }, '☢️'),
-      h('div', { class: 'set-main' }, [
-        h('div', { class: 'set-label' }, 'حذف كل البيانات نهائيًا'),
-        h('div', { class: 'set-sub' }, 'لا يمكن التراجع — دون نسخة احتياطية الأول')
-      ]),
-      h('button', { class: 'btn btn-danger btn-sm', onclick: async () => {
-        const ok = await confirmDialog({
-          title: 'حذف كل شيء', message: 'هتتمسح كل العمليات والحسابات والأهداف والميزانيات نهائيًا من الجهاز. متأكد؟',
-          confirmLabel: 'امسح كل حاجة', danger: true, emoji: '☢️'
-        });
-        if (ok) { await ctx.resetAll(); toast('تم حذف كل البيانات', { emoji: '☢️' }); }
-      } }, 'حذف')
     ])
   ]));
 
-  /* ---------- full data wipe ---------- */
-  view.appendChild(h('div', { class: 'set-group', style: 'margin-top:14px' }, [
-    h('div', { class: 'set-group-title' }, ['🗑️', 'البيانات']),
+  /* ---------- danger zone: full data wipe ---------- */
+  view.appendChild(h('div', { class: 'set-group danger-zone', style: 'margin-top:14px' }, [
+    h('div', { class: 'set-group-title danger-title' }, ['⛔', 'منطقة خطرة']),
     h('div', { class: 'set-row' }, [
       h('span', { class: 'set-ico' }, '🗑️'),
       h('div', { class: 'set-main' }, [
@@ -240,7 +215,7 @@ async function fullWipeDialog(ctx) {
   const ok = await confirmDialog({
     title: 'مسح جميع البيانات',
     icon: '⚠️',
-    message: 'سيتم حذف جميع بيانات FLOUSY المحفوظة على هذا الجهاز، بما في ذلك:\n• العمليات والمعاملات\n• الحسابات والأرصدة\n• الفواتير\n• الأهداف\n• التصنيفات\n• الإعدادات\n• بيانات المستخدم المحلية\n\nهذا الإجراء لا يمكن التراجع عنه.',
+    message: 'سيتم حذف جميع بيانات FLOUSY المحفوظة على هذا الجهاز.\n\nسيتم حذف:\n• العمليات\n• الحسابات والأرصدة\n• الفواتير\n• الأهداف\n• الميزانيات\n• التصنيفات\n• المتكررات\n• إعدادات المستخدم\n\nلا يمكن التراجع عن هذه العملية.',
     confirmLabel: 'مسح جميع البيانات',
     cancelLabel: 'إلغاء',
     danger: true,

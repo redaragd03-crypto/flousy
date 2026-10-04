@@ -45,7 +45,8 @@ const NAV = [
   { id: 'goals', label: 'الأهداف', icon: 'target' },
   { id: 'bills', label: 'الفواتير', icon: 'receipt' },
   { id: 'stats', label: 'الإحصائيات', icon: 'chart' },
-  { id: 'reports', label: 'التقارير', icon: 'printer' }
+  { id: 'reports', label: 'التقارير', icon: 'printer' },
+  { id: 'settings', label: 'الإعدادات', icon: 'gear' }
 ];
 
 /* ---------------- routing ---------------- */
@@ -156,6 +157,9 @@ function buildShell() {
     bn.appendChild(btn);
   }
 
+  // sidebar profile → open settings (profile section)
+  $('#sideProfile').addEventListener('click', () => ctx.nav('settings'));
+
   // FAB
   const fab = $('#fab');
   fab.addEventListener('click', (e) => {
@@ -188,7 +192,7 @@ function updateNavActive(name) {
   $$('.side-link').forEach((a) => a.classList.toggle('active', a.dataset.route === name));
   $$('.bn-item').forEach((b) => {
     const id = b.dataset.bn;
-    const active = id === name || (id === 'more' && ['accounts', 'budgets', 'goals', 'bills', 'reports', 'settings'].includes(name));
+    const active = id === name || (id === 'more' && ['accounts', 'budgets', 'goals', 'bills', 'reports'].includes(name));
     b.classList.toggle('active', active);
   });
 }
